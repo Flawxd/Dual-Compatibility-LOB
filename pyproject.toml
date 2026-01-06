@@ -1,0 +1,54 @@
+[build-system]
+requires = [
+    "scikit-build-core>=0.8.0",
+    "pybind11>=2.11.0",
+    "numpy>=1.21.0",
+]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "gpu_lob"
+version = "0.1.0"
+description = "CUDA-accelerated limit order book processing library"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "Your Name", email = "your.email@example.com"}
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: C++",
+]
+dependencies = [
+    "numpy>=1.21.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+]
+
+[tool.scikit-build]
+cmake.minimum-version = "3.18"
+cmake.verbose = true
+build-dir = "build/{wheel_tag}"
+install.components = ["python_modules"]
+
+wheel.py-api = "py3"
+wheel.expand-macos-universal-tags = false
+
+[tool.scikit-build.cmake.define]
+Python_EXECUTABLE = {env = "PYTHON_EXECUTABLE", default = "python3"}
+CMAKE_CXX_COMPILER = {env = "CXX", default = "/usr/bin/g++"}
+GPU_BACKEND = {env = "GPU_BACKEND", default = "AUTO"}
+GPU_TARGETS = {env = "GPU_TARGETS", default = ""}

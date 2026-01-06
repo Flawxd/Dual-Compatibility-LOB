@@ -1,0 +1,115 @@
+cmake_minimum_required(VERSION 3.21 FATAL_ERROR)
+
+# Option to select GPU backend
+set(GPU_BACKEND "HIP" CACHE STRING "GPU backend to use: HIP")
+
+# Project declaration - enable HIP language support
+project(gpu_lob LANGUAGES CXX HIP)
+
+# C++ standard requirements
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+message(STATUS "Building with GPU backend: ${GPU_BACKEND}")
+
+# Linux-specific HIP/ROCm configuration
+if(UNIX AND NOT APPLE)
+    # Find HIP package (should be found automatically on Linux with ROCm installed)
+    find_package(hip REQUIRED CONFIG HINTS /opt/rocm)
+
+    # Set HIP architectures for Linux
+    if(NOT DEFINED GPU_TARGETS)
+        if(DEFINED ENV{GPU_TARGETS})
+            set(GPU_TARGETS $ENV{GPU_TARGETS})
+        else()
+            # Common AMD GPU targets
+            # gfx900: Vega 10 (RX Vega 56/64)
+            # gfx906: Vega 20 (Radeon VII)
+            # gfx1030: RDNA 2 (RX 6000 series)
+            # gfx1100: RDNA 3 (RX 7000 series)
+            set(GPU_TARGETS "gfx1030;gfx1100")
+        endif()
+        message(STATUS "Using default GPU targets: ${GPU_TARGETS}")
+    else()
+        message(STATUS "Using provided GPU targets: ${GPU_TARGETS}")
+    endif()
+
+    # Set HIP architecture flags
+    set(CMAKE_HIP_ARCHITECTURES ${GPU_TARGETS})
+
+    # Create HIP library for GPU kernels
+    add_library(gpu_kernels STATIC
+        src/engine.hip
+        src/lob_kernel.hip
+    )
+
+    # Set HIP properties
+    set_target_properties(gpu_kernels PROPERTIES
+        HIP_ARCHITECTURES "${GPU_TARGETS}"
+        POSITION_INDEPENDENT_CODE ON
+    )
+
+    # Add HIP compile definitions
+    target_compile_definitions(gpu_kernels PRIVATE
+        USE_HIP
+        __HIP_PLATFORM_AMD__
+    )
+
+    # Link HIP runtime
+    target_link_libraries(gpu_kernels PRIVATE hip::host hip::device)
+
+else()
+    message(FATAL_ERROR "This CMakeLists.txt is for Linux only. Use CMakeLists.txt.windows for Windows or CMakeLists.txt.cuda_backup for NVIDIA CUDA.")
+endif()
+
+# Find required packages
+find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
+find_package(pybind11 CONFIG REQUIRED)
+
+# Define the Python extension module - ONLY C++ source
+python_add_library(_core MODULE
+    src/binding.cpp
+    WITH_SOABI
+)
+
+# Link the HIP kernel library
+target_link_libraries(_core PRIVATE gpu_kernels)
+
+# Link pybind11 headers
+target_link_libraries(_core PRIVATE pybind11::headers)
+
+# Set target properties
+set_target_properties(_core PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+)
+
+# Add preprocessor definitions for C++ files only
+target_compile_definitions(_core PRIVATE
+    USE_HIP
+    __HIP_PLATFORM_AMD__
+)
+
+# Installation rules
+install(TARGETS _core
+    COMPONENT python_modules
+    LIBRARY DESTINATION gpu_lob
+    RUNTIME DESTINATION gpu_lob
+)
+
+install(DIRECTORY gpu_lob/
+    COMPONENT python_modules
+    DESTINATION gpu_lob
+    FILES_MATCHING PATTERN "*.py"
+)
+
+# Print configuration summary
+message(STATUS "===========================================")
+message(STATUS "GPU LOB Build Configuration (Linux HIP):")
+message(STATUS "  GPU Backend:        ${GPU_BACKEND}")
+message(STATUS "  GPU Targets:        ${GPU_TARGETS}")
+message(STATUS "  HIP Path:           ${HIP_PATH}")
+message(STATUS "  Python Version:     ${Python_VERSION}")
+message(STATUS "  Compiler:           ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
+message(STATUS "  Install Prefix:     ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "===========================================")
