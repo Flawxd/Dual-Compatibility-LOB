@@ -1,8 +1,7 @@
 # gpu_lob - CUDA/HIP-Accelerated Python Library
 
 A high-performance CUDA/HIP-accelerated Python library for limit order book processing.
-This project does NOT work on WSL (at least for AMD, as it does not recognize the GPU), please do not try to build it on WSL. I have not tested this project for NVIDIA GPUs (as I do not have one), but I am conviced it should work.
-In hindsight, I should have bought an NVIDIA GPU, but money was tight. This project was tested on a 9060 XT.
+This project was made to work on Windows, do not try to build it on WSL or Linux.
 
 ## Prerequisites
 
