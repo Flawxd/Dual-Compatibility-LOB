@@ -2,6 +2,7 @@
 
 A high-performance CUDA/HIP-accelerated Python library for limit order book processing.
 This project was made to work on Windows, do not try to build it on WSL or any Linux distribution.
+The goal of this project was to provide support for heavy backtesting of trading algorithms.
 
 ## Prerequisites
 
