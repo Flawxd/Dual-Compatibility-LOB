@@ -1,6 +1,6 @@
 #include "gpu_compat.h"
 #include <stdio.h>
-
+//MAINLY FOR TESTING PURPOSES, IF YOU ARE CHANGING ANYTHING, YOU SHOULD TEST IT WITH THIS
 __global__ void hello_kernel(int *output, int n) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < n) {
